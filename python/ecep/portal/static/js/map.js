@@ -13,6 +13,7 @@ ecep.comparing = [];
 ecep.initialBounds = null;
 
 ecep.getUrl = function(name) {
+    var mapImgs = '/static/images/map/'
     switch (name) {
         case 'loadLocations': 
             return '/location/';
@@ -26,10 +27,38 @@ ecep.getUrl = function(name) {
             return '/location/' + arguments[1] + '/';
         case 'compare':
             return '/compare/' + arguments[1] + '/' + arguments[2] + '/';
+        case 'marker':
+            return mapImgs + 'loc-marker.png';
+        case 'cluster-small':
+            return mapImgs + 'cluster-sm.png';
+        case 'cluster-medium':
+            return mapImgs + 'cluster-md.png';
+        case 'cluster-large':
+            return mapImgs + 'cluster-lg.png';
+
         default:
             throw 'Unknown URL endpoint "' + name + '"';
     }
 };
+
+ecep.markerStyle = [
+    {
+        url: ecep.getUrl('cluster-small')
+        //example data for other properties:
+        //Fill these in when we have the real images
+        //width: 25,
+        //height: 30,
+        //anchor: [12, 30], //[x, y] in px from upper-left corner
+        //textSize: 10,     //not sure what units these are
+        //textColor: '#ff00000'
+    },
+    {
+        url: ecep.getUrl('cluster-medium')
+    },
+    {
+        url: ecep.getUrl('cluster-large')
+    }
+];
 
 ecep.init = function() {
     var inputNode = $('input.address-input');
@@ -354,9 +383,17 @@ ecep.loadLocations = function() {
             var ll = new google.maps.LatLng(data[i].lat, data[i].lng);
             bounds.extend(ll);
 
+            var markerImg = new google.maps.MarkerImage(
+                ecep.getUrl('marker'),
+                new google.maps.Size(25, 25)
+            );
+            markerImg.anchor = new google.maps.Point(12, 25);
+
             var marker = new google.maps.Marker({
                 position: ll,
-                title: data[i].site_name});
+                title: data[i].site_name, 
+                icon: markerImg
+            });
             marker.set('location_id', data[i].id);
             marker.set('location_site_name', data[i].site_name);
 
@@ -368,7 +405,10 @@ ecep.loadLocations = function() {
         if (ecep.clusterr != null) {
             ecep.clusterr.clearMarkers();
         }
-        ecep.clusterr = new MarkerClusterer(ecep.map, markers, {maxZoom:18, printable:true});
+        ecep.clusterr = new MarkerClusterer(ecep.map, markers, {
+            maxZoom: 18,
+            sytles: ecep.markerStyle
+        });
 
         ecep.map.fitBounds(bounds);
 
